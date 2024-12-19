@@ -1,0 +1,22 @@
+body {
+  font-family: verdana;
+  display: flex;
+  justify-content: center;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+form > * {
+  margin: 0.5rem;
+}
+
+li {
+  margin-bottom: 5px;
+}
+
+li button {
+  margin-left: 10px;
+}
