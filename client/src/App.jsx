@@ -57,9 +57,9 @@ function App() {
         authorization: window.localStorage.getItem('token')
       */
       const response = await fetch(`/api/users/${auth.id}/userSkills`, {
-        // headers: {
-        //   authorization: window.localStorage.getItem("token"),
-        // },
+        headers: {
+          authorization: window.localStorage.getItem("token"),
+        },
       });
       const json = await response.json();
       if (response.ok) {

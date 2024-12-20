@@ -8,6 +8,8 @@ const client = new pg.Client(process.env.DATABASE_URL);
 const uuid = require("uuid");
 const bcrypt = require("bcrypt");
 // TODO - create secret - jsonwebtoken library is already installed
+const jwt = require("jsonwebtoken");
+const JWT = process.env.JWT;
 
 const createTables = async () => {
   const SQL = /* sql */ `
@@ -59,20 +61,25 @@ const createSkill = async ({ name }) => {
 const authenticate = async ({ username, password }) => {
   // TODO - add password in SELECT
   const SQL = /* sql */ `
-    SELECT id
+    SELECT id, password
     FROM users
     WHERE username = $1
   `;
   const response = await client.query(SQL, [username]);
   // TODO - check for correct password with bcrypt.compare
-  if (!response.rows.length) {
+  if (
+    !response.rows.length ||
+    (await bcrypt.compare(password, response.rows[0].password)) === false
+  ) {
     const error = Error("not authorized");
     error.status = 401;
     throw error;
   }
   // TODO - create token with jsonwebtoken and sign it with secret
+  const token = await jwt.sign({ id: response.rows[0].id }, JWT);
+  console.log("token", token);
 
-  return { token: response.rows[0].id };
+  return { token };
 };
 
 const createUserSkill = async ({ user_id, skill_id }) => {
@@ -116,6 +123,16 @@ const deleteUserSkill = async ({ user_id, id }) => {
 
 const findUserByToken = async (token) => {
   // TODO - validate the passed token and use the id in the payload to find user
+  let id;
+  try {
+    const payload = await jwt.verify(token, JWT);
+    console.log(payload);
+    id = payload.id;
+  } catch (ex) {
+    const error = Error("not authorized");
+    error.status = 401;
+    throw error;
+  }
 
   const SQL = /* sql */ `
     SELECT id, username
@@ -124,7 +141,7 @@ const findUserByToken = async (token) => {
   `;
 
   // TODO - use id instead of token to find user
-  const response = await client.query(SQL, [token]);
+  const response = await client.query(SQL, [id]);
   if (!response.rows.length) {
     const error = Error("not authorized");
     error.status = 401;
